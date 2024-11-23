@@ -17,22 +17,24 @@ export 'package:modal_gif_picker/src/model/giphy_preview_types.dart';
 typedef ErrorListener = void Function(dynamic error);
 
 class ModalGifPicker {
-  static Future<GiphyGif?> pickModalSheetGif(
-      {required BuildContext context,
-      required String apiKey,
-      String rating = GiphyRating.g,
-      String lang = GiphyLanguage.english,
-      bool sticker = false,
-      GiphyPreviewType? previewType = GiphyPreviewType.previewGif,
-      Color backGroundColor = Colors.black,
-      Color textColor = Colors.white,
-      Color backDropColor = Colors.white,
-      Color topDragColor = Colors.white54,
-      double crossAxisSpacing = 5,
-      double mainAxisSpacing = 5,
-      int crossAxisCount = 2,
-      double childAspectRatio = 1.6,
-      ErrorListener? onError}) async {
+  static Future<GiphyGif?> pickModalSheetGif({
+    required BuildContext context,
+    required String apiKey,
+    String rating = GiphyRating.g,
+    String lang = GiphyLanguage.english,
+    bool sticker = false,
+    GiphyPreviewType? previewType = GiphyPreviewType.previewGif,
+    Color backGroundColor = Colors.black,
+    Color textColor = Colors.white,
+    Color backDropColor = Colors.white,
+    Color topDragColor = Colors.white54,
+    double crossAxisSpacing = 5,
+    double mainAxisSpacing = 5,
+    int crossAxisCount = 2,
+    double childAspectRatio = 1.6,
+    ErrorListener? onError,
+    Widget? addMediaTopWidget,
+  }) async {
     GiphyGif? result;
 
     /// picker ui
@@ -127,6 +129,7 @@ class ModalGifPicker {
                                         childAspectRatio: childAspectRatio,
                                         crossAxisSpacing: crossAxisSpacing,
                                         mainAxisSpacing: mainAxisSpacing,
+                                        addMediaTopWidget: addMediaTopWidget,
                                       ),
                                     ),
                                   ),
