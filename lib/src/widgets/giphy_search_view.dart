@@ -15,15 +15,17 @@ class GiphySearchView extends StatefulWidget {
   double childAspectRatio;
   double crossAxisSpacing;
   double mainAxisSpacing;
+  Widget? addMediaTopWidget;
 
-  GiphySearchView(
-      {Key? key,
-      this.sheetScrollController,
-      this.childAspectRatio = 1.6,
-      this.crossAxisCount = 2,
-      this.crossAxisSpacing = 5,
-      this.mainAxisSpacing = 5})
-      : super(key: key);
+  GiphySearchView({
+    Key? key,
+    this.sheetScrollController,
+    this.childAspectRatio = 1.6,
+    this.crossAxisCount = 2,
+    this.crossAxisSpacing = 5,
+    this.mainAxisSpacing = 5,
+    this.addMediaTopWidget,
+  }) : super(key: key);
   @override
   _GiphySearchViewState createState() => _GiphySearchViewState();
 }
@@ -92,6 +94,10 @@ class _GiphySearchViewState extends State<GiphySearchView> {
           ],
         ),
       ),
+      if (widget.addMediaTopWidget != null)
+        Container(
+            margin: EdgeInsets.only(top: 17, bottom: 20),
+            child: widget.addMediaTopWidget),
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
