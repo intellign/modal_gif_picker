@@ -34,6 +34,8 @@ class ModalGifPicker {
     double childAspectRatio = 1.6,
     ErrorListener? onError,
     Widget? addMediaTopWidget,
+    bool whiteBackground = false,
+    bool useUrlToSaveMemory = false,
   }) async {
     GiphyGif? result;
 
@@ -44,107 +46,119 @@ class ModalGifPicker {
         backgroundColor: Colors.transparent,
         isScrollControlled: true,
         builder: (BuildContext context) {
-          return FractionallySizedBox(
-            heightFactor: 0.9,
-            child: DraggableScrollableSheet(
-              initialChildSize: 0.9,
-              maxChildSize: 1,
-              minChildSize: 0.9,
-              expand: true,
-              builder:
-                  (BuildContext context, ScrollController scrollController) {
-                return Center(
-                  child: Container(
-                    decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                            topRight: Radius.circular(16),
-                            topLeft: Radius.circular(16)),
-                        boxShadow: [
-                          BoxShadow(
-                              blurRadius: 10,
-                              spreadRadius: 16,
-                              color: backGroundColor.withOpacity(0.3),
-                              offset: const Offset(0, 16))
-                        ]),
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                          topRight: Radius.circular(16),
-                          topLeft: Radius.circular(16)),
-                      child: BackdropFilter(
-                        filter: ui.ImageFilter.blur(
-                          sigmaX: 40.0,
-                          sigmaY: 40.0,
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color: backDropColor.withOpacity(0.5),
-                              borderRadius: const BorderRadius.only(
-                                  topRight: Radius.circular(16),
-                                  topLeft: Radius.circular(16)),
-                              border: Border.all(
-                                width: 1.5,
-                                color: Colors.transparent,
-                              )),
-                          child: Center(
-                            child: Column(
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10),
-                                  child: Container(
-                                    width: 40,
-                                    height: 5,
-                                    decoration: BoxDecoration(
-                                        color: topDragColor,
-                                        borderRadius: const BorderRadius.all(
-                                            Radius.circular(10))),
-                                  ),
-                                ),
-                                const SizedBox(
-                                  height: 10,
-                                ),
-                                Expanded(
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 10),
-                                    child: GiphyContext(
-                                      previewType: previewType,
-                                      apiKey: apiKey,
-                                      showPreviewPage: false,
-                                      rating: rating,
-                                      searchDelay:
-                                          const Duration(milliseconds: 300),
-                                      language: lang,
-                                      sticker: sticker,
-                                      onError: onError ??
-                                          (error) =>
-                                              _showErrorDialog(context, error),
-                                      onSelected: (gif) {
-                                        result = gif;
-                                        Navigator.pop(context);
-                                      },
-                                      decorator: null,
-                                      child: GiphySearchView(
-                                        sheetScrollController: scrollController,
-                                        crossAxisCount: crossAxisCount,
-                                        childAspectRatio: childAspectRatio,
-                                        crossAxisSpacing: crossAxisSpacing,
-                                        mainAxisSpacing: mainAxisSpacing,
-                                        addMediaTopWidget: addMediaTopWidget,
+          return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => Navigator.pop(context),
+              child: FractionallySizedBox(
+                heightFactor: 0.9,
+                child: DraggableScrollableSheet(
+                  initialChildSize: 0.9,
+                  maxChildSize: 1,
+                  minChildSize: 0.7,
+                  expand: true,
+                  builder: (BuildContext context,
+                      ScrollController scrollController) {
+                    return Center(
+                      child: Container(
+                        decoration: BoxDecoration(
+                            borderRadius: const BorderRadius.only(
+                                topRight: Radius.circular(16),
+                                topLeft: Radius.circular(16)),
+                            boxShadow: [
+                              BoxShadow(
+                                  blurRadius: 10,
+                                  spreadRadius: 16,
+                                  color: whiteBackground
+                                      ? backDropColor.withOpacity(0.21)
+                                      : backGroundColor.withOpacity(0.3),
+                                  offset: const Offset(0, 16))
+                            ]),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(16),
+                              topLeft: Radius.circular(16)),
+                          child: BackdropFilter(
+                            filter: ui.ImageFilter.blur(
+                              sigmaX: 40.0,
+                              sigmaY: 40.0,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                  color: whiteBackground
+                                      ? backDropColor.withOpacity(0.27)
+                                      : backGroundColor.withOpacity(0.5),
+                                  borderRadius: const BorderRadius.only(
+                                      topRight: Radius.circular(16),
+                                      topLeft: Radius.circular(16)),
+                                  border: Border.all(
+                                    width: 1.5,
+                                    color: Colors.transparent,
+                                  )),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: Container(
+                                        width: 40,
+                                        height: 5,
+                                        decoration: BoxDecoration(
+                                            color: topDragColor,
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(10))),
                                       ),
                                     ),
-                                  ),
-                                )
-                              ],
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 10),
+                                        child: GiphyContext(
+                                          previewType: previewType,
+                                          apiKey: apiKey,
+                                          showPreviewPage: false,
+                                          rating: rating,
+                                          searchDelay:
+                                              const Duration(milliseconds: 300),
+                                          language: lang,
+                                          sticker: sticker,
+                                          onError: onError ??
+                                              (error) => _showErrorDialog(
+                                                  context, error),
+                                          onSelected: (gif) {
+                                            result = gif;
+                                            Navigator.pop(context);
+                                          },
+                                          decorator: null,
+                                          child: GiphySearchView(
+                                            useUrlToSaveMemory:
+                                                useUrlToSaveMemory,
+                                            sheetScrollController:
+                                                scrollController,
+                                            crossAxisCount: crossAxisCount,
+                                            childAspectRatio: childAspectRatio,
+                                            crossAxisSpacing: crossAxisSpacing,
+                                            mainAxisSpacing: mainAxisSpacing,
+                                            addMediaTopWidget:
+                                                addMediaTopWidget,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          );
+                    );
+                  },
+                ),
+              ));
         });
 
     return result;
