@@ -16,7 +16,7 @@ class GiphySearchView extends StatefulWidget {
   double crossAxisSpacing;
   double mainAxisSpacing;
   Widget? addMediaTopWidget;
-
+  bool useUrlToSaveMemory;
   GiphySearchView({
     Key? key,
     this.sheetScrollController,
@@ -25,6 +25,7 @@ class GiphySearchView extends StatefulWidget {
     this.crossAxisSpacing = 5,
     this.mainAxisSpacing = 5,
     this.addMediaTopWidget,
+    this.useUrlToSaveMemory = false,
   }) : super(key: key);
   @override
   _GiphySearchViewState createState() => _GiphySearchViewState();
@@ -32,6 +33,7 @@ class GiphySearchView extends StatefulWidget {
 
 class _GiphySearchViewState extends State<GiphySearchView> {
   final _textController = TextEditingController();
+  final _focusNode = FocusNode();
   final _scrollController = ScrollController();
   final _repoController = StreamController<GiphyRepository>();
   late Debouncer _debouncer;
@@ -71,6 +73,7 @@ class _GiphySearchViewState extends State<GiphySearchView> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: TextField(
+                  focusNode: _focusNode,
                   controller: _textController,
                   decoration: InputDecoration(
                     icon: Icon(
@@ -94,7 +97,9 @@ class _GiphySearchViewState extends State<GiphySearchView> {
           ],
         ),
       ),
-      if (widget.addMediaTopWidget != null)
+      if (widget.addMediaTopWidget != null &&
+          _textController.text.isEmpty &&
+          !_focusNode.hasFocus)
         Container(
             margin: EdgeInsets.only(top: 17, bottom: 20),
             child: widget.addMediaTopWidget),
@@ -131,20 +136,6 @@ class _GiphySearchViewState extends State<GiphySearchView> {
                 if (snapshot.hasData) {
                   return snapshot.data!.totalCount > 0
                       ? NotificationListener(
-                          child: RefreshIndicator(
-                              child: GiphyGridView(
-                                  key: Key('${snapshot.data.hashCode}'),
-                                  crossAxisCount: widget.crossAxisCount,
-                                  childAspectRatio: widget.childAspectRatio,
-                                  crossAxisSpacing: widget.crossAxisSpacing,
-                                  mainAxisSpacing: widget.mainAxisSpacing,
-                                  repo: snapshot.data!,
-
-                                  /// add scroll controller
-                                  scrollController:
-                                      widget.sheetScrollController),
-                              onRefresh: () =>
-                                  _search(giphy, term: _textController.text)),
                           onNotification: (n) {
                             // hide keyboard when scrolling
                             if (n is UserScrollNotification) {
@@ -153,6 +144,21 @@ class _GiphySearchViewState extends State<GiphySearchView> {
                             }
                             return false;
                           },
+                          child: RefreshIndicator(
+                            onRefresh: () =>
+                                _search(giphy, term: _textController.text),
+                            child: GiphyGridView(
+                                key: Key('${snapshot.data.hashCode}'),
+                                crossAxisCount: widget.crossAxisCount,
+                                childAspectRatio: widget.childAspectRatio,
+                                crossAxisSpacing: widget.crossAxisSpacing,
+                                mainAxisSpacing: widget.mainAxisSpacing,
+                                repo: snapshot.data!,
+                                useUrlToSaveMemory: widget.useUrlToSaveMemory,
+
+                                /// add scroll controller
+                                scrollController: widget.sheetScrollController),
+                          ),
                         )
                       : Center(
                           child: Text(
@@ -194,7 +200,8 @@ class _GiphySearchViewState extends State<GiphySearchView> {
               rating: giphy.rating,
               sticker: giphy.sticker,
               previewType: giphy.previewType,
-              onError: giphy.onError)
+              onError: giphy.onError,
+              useUrlToSaveMemory: widget.useUrlToSaveMemory)
           : GiphyRepository.search(
               apiKey: giphy.apiKey,
               query: term,
