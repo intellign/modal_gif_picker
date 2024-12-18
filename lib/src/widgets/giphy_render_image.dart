@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:modal_gif_picker/src/model/client/gif.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 /// Loads and renders a Giphy image.
 class GiphyRenderImage extends StatefulWidget {
@@ -11,6 +12,7 @@ class GiphyRenderImage extends StatefulWidget {
   final double? height;
   final BoxFit? fit;
   final bool renderGiphyOverlay;
+  final bool useUrlToSaveMemory;
 
   /// Loads an image from given url.
   const GiphyRenderImage(
@@ -20,7 +22,8 @@ class GiphyRenderImage extends StatefulWidget {
       this.width,
       this.height,
       this.fit,
-      this.renderGiphyOverlay = true})
+      this.renderGiphyOverlay = true,
+      this.useUrlToSaveMemory = false})
       : super(key: key);
 
   /// Loads the original image for given Giphy gif.
@@ -31,7 +34,8 @@ class GiphyRenderImage extends StatefulWidget {
       this.width,
       this.height,
       this.fit,
-      this.renderGiphyOverlay = true})
+      this.renderGiphyOverlay = true,
+      this.useUrlToSaveMemory = false})
       : url = gif.images.original?.url,
         super(key: key ?? Key(gif.id));
 
@@ -43,8 +47,22 @@ class GiphyRenderImage extends StatefulWidget {
       this.width,
       this.height,
       this.fit,
-      this.renderGiphyOverlay = true})
+      this.renderGiphyOverlay = true,
+      this.useUrlToSaveMemory = false})
       : url = gif.images.originalStill?.url,
+        super(key: key ?? Key(gif.id));
+
+  /// Loads the original still image for given Giphy gif.
+  GiphyRenderImage.fixedWidth(
+      {Key? key,
+      required GiphyGif gif,
+      this.placeholder,
+      this.width,
+      this.height,
+      this.fit,
+      this.renderGiphyOverlay = true,
+      this.useUrlToSaveMemory = false})
+      : url = gif.images.fixedWidth?.webp,
         super(key: key ?? Key(gif.id));
 
   @override
@@ -74,21 +92,53 @@ class _GiphyRenderImageState extends State<GiphyRenderImage> {
     super.initState();
   }
 
-  @override
-  Widget build(BuildContext context) => FutureBuilder(
-      future: _loadImage,
-      builder: (BuildContext context, AsyncSnapshot<Uint8List?> snapshot) {
-        if (snapshot.hasData) {
-          final image = Image.memory(snapshot.data!,
-              width: widget.width, height: widget.height, fit: widget.fit);
+  Widget loading() {
+    return widget.placeholder ??
+        const Center(child: CircularProgressIndicator());
+  }
 
-          if (widget.renderGiphyOverlay) {
-            /// removed giphy overlay
-            return image;
-          }
-          return image;
-        }
-        return widget.placeholder ??
-            const Center(child: CircularProgressIndicator());
-      });
+  @override
+  Widget build(BuildContext context) => widget.useUrlToSaveMemory
+      ? widget.url != null
+          ? true
+              ? CachedNetworkImage(
+                  imageUrl: widget.url!,
+                  placeholder: (context, url) => loading(),
+                  errorWidget: (context, url, error) => loading(),
+                  imageBuilder: (context, imageProvider) => Container(
+                        //     width: w,
+                        //   height: w / 1.2,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(10),
+                          ),
+                          image: DecorationImage(
+                              image: imageProvider, fit: BoxFit.fill),
+                        ),
+                      ))
+              : Image.network(
+                  widget.url!,
+                  gaplessPlayback: true,
+                  fit: BoxFit.fill,
+                  loadingBuilder: (context, child, loadingProgress) =>
+                      loading(),
+                  errorBuilder: (context, error, stackTrace) => loading(),
+                )
+          : loading()
+      : FutureBuilder(
+          future: _loadImage,
+          builder: (BuildContext context, AsyncSnapshot<Uint8List?> snapshot) {
+            if (snapshot.hasData) {
+              final image = Image.memory(snapshot.data!,
+                  width: widget.width, height: widget.height, fit: widget.fit);
+
+              if (widget.renderGiphyOverlay) {
+                /// removed giphy overlay
+                return image;
+              }
+              return image;
+            }
+            return loading();
+          });
 }
