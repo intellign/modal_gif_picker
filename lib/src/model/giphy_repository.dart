@@ -12,12 +12,15 @@ typedef GetCollection = Future<GiphyCollection> Function(
 class GiphyRepository extends Repository<GiphyGif> {
   final _client = http.Client();
   final _previewCompleters = HashMap<int, Completer<Uint8List?>>();
+  final _previewCompletersUrl = HashMap<int, Completer<String?>>();
   final _previewQueue = Queue<int>();
   final GetCollection getCollection;
   final int maxConcurrentPreviewLoad;
   late GiphyClient _giphyClient;
   int _previewLoad = 0;
   final GiphyPreviewType? previewType;
+
+  final bool useUrlToSaveMemory;
 
   GiphyRepository({
     required String apiKey,
@@ -26,6 +29,7 @@ class GiphyRepository extends Repository<GiphyGif> {
     int pageSize = 25,
     ErrorListener? onError,
     this.previewType,
+    this.useUrlToSaveMemory = false,
   }) : super(pageSize: pageSize, onError: onError) {
     _giphyClient = GiphyClient(apiKey: apiKey, client: _client);
   }
@@ -39,7 +43,9 @@ class GiphyRepository extends Repository<GiphyGif> {
   }
 
   /// Retrieves a preview Gif image at specified index.
-  Future<Uint8List?> getPreview(int index) async {
+  Future<Uint8List?> getPreview(
+    int index,
+  ) async {
     var completer = _previewCompleters[index];
     if (completer == null) {
       completer = Completer<Uint8List?>();
@@ -53,9 +59,29 @@ class GiphyRepository extends Repository<GiphyGif> {
     return completer.future;
   }
 
+  Future<String?> getPreview4Url(
+    int index,
+  ) async {
+    if (useUrlToSaveMemory) {
+      var completer = _previewCompletersUrl[index];
+      if (completer == null) {
+        completer = Completer<String?>();
+        _previewCompletersUrl[index] = completer;
+        _previewQueue.add(index);
+
+        // initiate next load
+        _loadNextPreview();
+      }
+
+      return completer.future;
+    }
+  }
+
   /// Cancels retrieving specified preview image, by removing it from the queue.
   void cancelGetPreview(int index) {
-    final completer = _previewCompleters.remove(index);
+    final completer =
+        (useUrlToSaveMemory ? _previewCompletersUrl : _previewCompleters)
+            .remove(index);
     if (completer != null) {
       // remove from queue
       _previewQueue.remove(index);
@@ -68,28 +94,45 @@ class GiphyRepository extends Repository<GiphyGif> {
   void _loadNextPreview() {
     if (_previewLoad < maxConcurrentPreviewLoad && _previewQueue.isNotEmpty) {
       _previewLoad++;
-
-      final index = _previewQueue.removeLast();
-      final completer = _previewCompleters.remove(index);
-      if (completer != null) {
-        get(index).then(_loadPreviewImage).then((bytes) {
-          if (!completer.isCompleted) {
-            completer.complete(bytes);
-          }
-        }).whenComplete(() {
+      if (useUrlToSaveMemory) {
+        final index = _previewQueue.removeLast();
+        final completer = _previewCompletersUrl.remove(index);
+        if (completer != null) {
+          get(index).then(_loadPreviewImageUrl).then((url) {
+            if (!completer.isCompleted) {
+              completer.complete(url);
+            }
+          }).whenComplete(() {
+            _previewLoad--;
+            _loadNextPreview();
+          });
+        } else {
           _previewLoad--;
-          _loadNextPreview();
-        });
-      } else {
-        _previewLoad--;
-      }
+        }
 
-      _loadNextPreview();
+        _loadNextPreview();
+      } else {
+        final index = _previewQueue.removeLast();
+        final completer = _previewCompleters.remove(index);
+        if (completer != null) {
+          get(index).then(_loadPreviewImage).then((bytes) {
+            if (!completer.isCompleted) {
+              completer.complete(bytes);
+            }
+          }).whenComplete(() {
+            _previewLoad--;
+            _loadNextPreview();
+          });
+        } else {
+          _previewLoad--;
+        }
+
+        _loadNextPreview();
+      }
     }
   }
 
-  Future<Uint8List?> _loadPreviewImage(GiphyGif gif) async {
-    // fallback to still image if preview is empty
+  String? getUrl(GiphyGif gif, {bool justUrl = false}) {
     String? url;
     switch (previewType) {
       case GiphyPreviewType.fixedWidthSmallStill:
@@ -100,6 +143,9 @@ class GiphyRepository extends Repository<GiphyGif> {
         break;
       case GiphyPreviewType.fixedHeight:
         url = gif.images.fixedHeight?.url;
+        break;
+      case GiphyPreviewType.fixedWidth:
+        url = gif.images.fixedWidth?.webp;
         break;
       case GiphyPreviewType.original:
         url = gif.images.original?.url;
@@ -117,16 +163,38 @@ class GiphyRepository extends Repository<GiphyGif> {
         url = null;
         break;
     }
-    url ??= gif.images.previewGif?.url ??
-        gif.images.fixedWidthSmallStill?.url ??
-        gif.images.fixedHeightDownsampled?.url ??
-        gif.images.original?.url;
+    if (justUrl) {
+      url ??= gif.images.fixedWidth?.webp ??
+          gif.images.fixedWidthSmallStill?.url ??
+          gif.images.fixedHeightDownsampled?.webp ??
+          gif.images.original?.webp;
+    } else {
+      url ??= gif.images.previewGif?.url ??
+          gif.images.fixedWidthSmallStill?.url ??
+          gif.images.fixedHeightDownsampled?.url ??
+          gif.images.original?.url;
+    }
+    return url;
+  }
+
+  Future<Uint8List?> _loadPreviewImage(GiphyGif gif) async {
+    // fallback to still image if preview is empty
+
+    final url = getUrl(gif);
 
     if (url != null) {
       return await GiphyRenderImage.load(url, client: _client);
     }
 
     return null;
+  }
+
+  String? _loadPreviewImageUrl(GiphyGif gif) {
+    // fallback to still image if preview is empty
+
+    final url = getUrl(gif, justUrl: true);
+
+    return url;
   }
 
   /// The repository of trending gif images.
@@ -136,8 +204,10 @@ class GiphyRepository extends Repository<GiphyGif> {
     bool sticker = false,
     ErrorListener? onError,
     GiphyPreviewType? previewType,
+    bool useUrlToSaveMemory = false,
   }) async {
     final repo = GiphyRepository(
+        useUrlToSaveMemory: useUrlToSaveMemory,
         apiKey: apiKey,
         previewType: previewType,
         getCollection: (client, offset, limit) => client.trending(
