@@ -3,6 +3,7 @@ enum GiphyPreviewType {
   fixedWidthSmallStill,
   previewGif,
   fixedHeight,
+  fixedWidth,
   original,
   previewWebp,
   downsizedLarge,
