@@ -109,10 +109,8 @@ class _GiphyRenderImageState extends State<GiphyRenderImage> {
                         //     width: w,
                         //   height: w / 1.2,
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          borderRadius: BorderRadius.all(
-                            Radius.circular(10),
-                          ),
+                          //     shape: BoxShape.circle,
+                          //  borderRadius: BorderRadius.all( Radius.circular(10)),
                           image: DecorationImage(
                               image: imageProvider, fit: BoxFit.fill),
                         ),
