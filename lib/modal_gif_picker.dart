@@ -54,7 +54,7 @@ class ModalGifPicker {
                 child: DraggableScrollableSheet(
                   initialChildSize: 0.9,
                   maxChildSize: 1,
-                  minChildSize: 0.7,
+                  minChildSize: 0.59,
                   expand: true,
                   builder: (BuildContext context,
                       ScrollController scrollController) {
