@@ -101,6 +101,11 @@ class _GiphyRenderImageState extends State<GiphyRenderImage> {
   }
 
   Widget gifWidget() {
+    if (widget.gif.images.fixedWidth == null ||
+        (widget.gif.images.fixedWidth != null &&
+            widget.gif.images.fixedWidth!.width == null)) {
+      return loading();
+    }
     double _aspectRatio = 0.0;
     _aspectRatio = (double.parse(widget.gif.images.fixedWidth!.width!) /
         double.parse(widget.gif.images.fixedWidth!.height!));
@@ -217,4 +222,3 @@ class _GiphyRenderImageState extends State<GiphyRenderImage> {
             return loading();
           });
 }
-
