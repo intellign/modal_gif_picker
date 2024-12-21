@@ -67,6 +67,11 @@ class _GiphyImageThumbnailState extends State<GiphyImageThumbnail> {
   }
 
   Widget gifWidget() {
+    if (gif!.images.fixedWidth == null ||
+        (gif!.images.fixedWidth != null &&
+            gif!.images.fixedWidth!.width == null)) {
+      return loading();
+    }
     double _aspectRatio = 0.0;
     _aspectRatio = (double.parse(gif!.images.fixedWidth!.width!) /
         double.parse(gif!.images.fixedWidth!.height!));
