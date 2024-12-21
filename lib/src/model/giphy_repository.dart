@@ -12,7 +12,7 @@ typedef GetCollection = Future<GiphyCollection> Function(
 class GiphyRepository extends Repository<GiphyGif> {
   final _client = http.Client();
   final _previewCompleters = HashMap<int, Completer<Uint8List?>>();
-  final _previewCompletersUrl = HashMap<int, Completer<String?>>();
+  final _previewCompletersUrl = HashMap<int, Completer<GiphyGif?>>();
   final _previewQueue = Queue<int>();
   final GetCollection getCollection;
   final int maxConcurrentPreviewLoad;
@@ -59,13 +59,13 @@ class GiphyRepository extends Repository<GiphyGif> {
     return completer.future;
   }
 
-  Future<String?> getPreview4Url(
+  Future<GiphyGif?> getPreview4Url(
     int index,
   ) async {
     if (useUrlToSaveMemory) {
       var completer = _previewCompletersUrl[index];
       if (completer == null) {
-        completer = Completer<String?>();
+        completer = Completer<GiphyGif?>();
         _previewCompletersUrl[index] = completer;
         _previewQueue.add(index);
 
@@ -98,9 +98,9 @@ class GiphyRepository extends Repository<GiphyGif> {
         final index = _previewQueue.removeLast();
         final completer = _previewCompletersUrl.remove(index);
         if (completer != null) {
-          get(index).then(_loadPreviewImageUrl).then((url) {
+          get(index).then(_loadPreviewImageGif).then((gif) {
             if (!completer.isCompleted) {
-              completer.complete(url);
+              completer.complete(gif);
             }
           }).whenComplete(() {
             _previewLoad--;
@@ -189,12 +189,12 @@ class GiphyRepository extends Repository<GiphyGif> {
     return null;
   }
 
-  String? _loadPreviewImageUrl(GiphyGif gif) {
+  GiphyGif _loadPreviewImageGif(GiphyGif gif) {
     // fallback to still image if preview is empty
 
-    final url = getUrl(gif, justUrl: true);
-
-    return url;
+    //// final url = getUrl(gif, justUrl: true);
+    /// return url;
+    return gif;
   }
 
   /// The repository of trending gif images.
