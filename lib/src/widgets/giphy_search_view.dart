@@ -97,89 +97,101 @@ class _GiphySearchViewState extends State<GiphySearchView> {
           ],
         ),
       ),
-      if (widget.addMediaTopWidget != null &&
-          _textController.text.isEmpty &&
-          !_focusNode.hasFocus)
-        Container(
-            margin: EdgeInsets.only(top: 17, bottom: 20),
-            child: widget.addMediaTopWidget),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'Trending on GIPHY',
-                style: TextStyle(
-                    color: Colors.white.withOpacity(0.5),
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Align(
-                alignment: Alignment.centerRight,
-                child: Image.asset('assets/PoweredBy_200px-Black_HorizLogo.png',
-                    package: 'modal_gif_picker', height: 20)),
-          )
-        ],
-      ),
       Expanded(
-          child: StreamBuilder(
-              stream: _repoController.stream,
-              builder: (BuildContext context,
-                  AsyncSnapshot<GiphyRepository> snapshot) {
-                if (snapshot.hasData) {
-                  return snapshot.data!.totalCount > 0
-                      ? NotificationListener(
-                          onNotification: (n) {
-                            // hide keyboard when scrolling
-                            if (n is UserScrollNotification) {
-                              FocusScope.of(context).requestFocus(FocusNode());
-                              return true;
-                            }
-                            return false;
-                          },
-                          child: RefreshIndicator(
-                            onRefresh: () =>
-                                _search(giphy, term: _textController.text),
-                            child: GiphyGridView(
-                                key: Key('${snapshot.data.hashCode}'),
-                                crossAxisCount: widget.crossAxisCount,
-                                childAspectRatio: widget.childAspectRatio,
-                                crossAxisSpacing: widget.crossAxisSpacing,
-                                mainAxisSpacing: widget.mainAxisSpacing,
-                                repo: snapshot.data!,
-                                useUrlToSaveMemory: widget.useUrlToSaveMemory,
-
-                                /// add scroll controller
-                                scrollController: widget.sheetScrollController),
+          child: NestedScrollView(
+              controller: widget.sheetScrollController,
+              floatHeaderSlivers: true,
+              headerSliverBuilder: (context, innerBoxIsScrolled) => [
+                    if (widget.addMediaTopWidget != null &&
+                        _textController.text.isEmpty)
+                      SliverToBoxAdapter(
+                          child: Container(
+                              margin: EdgeInsets.only(top: 17, bottom: 20),
+                              child: widget.addMediaTopWidget!)),
+                    SliverToBoxAdapter(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                'Trending on GIPHY',
+                                style: TextStyle(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ),
                           ),
-                        )
-                      : Center(
-                          child: Text(
-                          'No results',
-                          style: TextStyle(
-                              color: Colors.white54.withOpacity(0.5),
-                              fontSize: 18),
-                        ));
-                } else if (snapshot.hasError) {
-                  Center(
-                      child: Text('An error occurred',
-                          style: TextStyle(
-                              color: Colors.white54.withOpacity(0.5),
-                              fontSize: 18)));
-                }
-                return const Center(
-                    child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation(Colors.red),
-                  strokeWidth: 1.2,
-                ));
-              }))
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Image.asset(
+                                    'assets/PoweredBy_200px-Black_HorizLogo.png',
+                                    package: 'modal_gif_picker',
+                                    height: 20)),
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+              body: StreamBuilder(
+                  stream: _repoController.stream,
+                  builder: (BuildContext context,
+                      AsyncSnapshot<GiphyRepository> snapshot) {
+                    if (snapshot.hasData) {
+                      return snapshot.data!.totalCount > 0
+                          ? NotificationListener(
+                              onNotification: (n) {
+                                // hide keyboard when scrolling
+                                if (n is UserScrollNotification) {
+                                  FocusScope.of(context)
+                                      .requestFocus(FocusNode());
+                                  return true;
+                                }
+                                return false;
+                              },
+                              child: RefreshIndicator(
+                                onRefresh: () =>
+                                    _search(giphy, term: _textController.text),
+                                child: GiphyGridView(
+                                    key: Key('${snapshot.data.hashCode}'),
+                                    crossAxisCount: widget.crossAxisCount,
+                                    childAspectRatio: widget.childAspectRatio,
+                                    crossAxisSpacing: widget.crossAxisSpacing,
+                                    mainAxisSpacing: widget.mainAxisSpacing,
+                                    repo: snapshot.data!,
+                                    useUrlToSaveMemory:
+                                        widget.useUrlToSaveMemory,
+
+                                    /// add scroll controller
+                                    scrollController:
+                                        widget.sheetScrollController),
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                              'No results',
+                              style: TextStyle(
+                                  color: Colors.white54.withOpacity(0.5),
+                                  fontSize: 18),
+                            ));
+                    } else if (snapshot.hasError) {
+                      Center(
+                          child: Text('An error occurred',
+                              style: TextStyle(
+                                  color: Colors.white54.withOpacity(0.5),
+                                  fontSize: 18)));
+                    }
+                    return const Center(
+                        child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation(Colors.red),
+                      strokeWidth: 1.2,
+                    ));
+                  })))
     ]);
   }
 
